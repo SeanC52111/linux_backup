@@ -75,10 +75,10 @@ public class STRTreeRangeQuery {
 		conf.setMapperClass(STRTreeRangeQueryMapper.class);
 		conf.setReducerClass(STRTreeRangeQueryReducer.class);
 		
-		conf.setMapOutputKeyClass(LongWritable.class);
-		conf.setMapOutputValueClass(Rect.class);
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(Text.class);
 		
-		conf.setOutputKeyClass(LongWritable.class);
+		conf.setOutputKeyClass(Text.class);
 		conf.setOutputValueClass(Text.class);
 		
 		conf.setInputFormat(SequenceFileInputFormat.class);
@@ -96,7 +96,7 @@ public class STRTreeRangeQuery {
 }
 
 class STRTreeRangeQueryMapper extends MapReduceBase
-	implements Mapper<Text,STRTreeWritable,LongWritable,Rect>{
+	implements Mapper<Text,STRTreeWritable,Text,Text>{
 	long rq_id = 0;
 	Rect range = null;
 	
@@ -112,7 +112,7 @@ class STRTreeRangeQueryMapper extends MapReduceBase
 	}
 	
 	@Override
-	public void map(Text treeid,STRTreeWritable strtree,OutputCollector<LongWritable,Rect> oc, Reporter rpt)
+	public void map(Text treeid,STRTreeWritable strtree,OutputCollector<Text,Text> oc, Reporter rpt)
 			throws IOException{
 		Debug.println("Treeid = "+treeid.toString());
 		LongWritable lw = new LongWritable(rq_id);
@@ -125,27 +125,39 @@ class STRTreeRangeQueryMapper extends MapReduceBase
 		Debug.println("Find "+result.size()+" lakes.");
 		for(Rect r : result) {
 			Debug.println(r.toString());
-			oc.collect(lw, r);
+			oc.collect(new Text(lw.toString()), new Text(r.toString()));
+		}
+		String vos = "";
+		for(String s : VO) {
+			vos += s + "#";
+			oc.collect(new Text("VO"), new Text(vos));
 		}
 	}
 }
 
 class STRTreeRangeQueryReducer extends MapReduceBase
-	implements Reducer<LongWritable,Rect,LongWritable,Text> {
+	implements Reducer<Text,Text,Text,Text> {
 	
 	@Override
-	public void reduce(LongWritable rqid,Iterator<Rect> rect_it, OutputCollector<LongWritable,Text>oc, Reporter rpt)
+	public void reduce(Text rqid,Iterator<Text> rect_it, OutputCollector<Text,Text>oc, Reporter rpt)
 		throws IOException{
 		
 		int total = 0;
-		while(rect_it.hasNext()) {
-			Rect r = rect_it.next();
-			oc.collect(rqid, new Text(r.toString()));
-			total++;
+		if(rqid.toString().equals("VO")) {
+			Text vos = new Text(rect_it.next());
+			oc.collect(rqid, vos);
+			Debug.println("VOs: "+vos.toString());
+		}else {
+			while(rect_it.hasNext()) {
+				Text r = rect_it.next();
+				oc.collect(rqid, new Text(r.toString()));
+				total++;
+			}
+			
+			oc.collect(rqid, new Text("Summary: ["+total+"] lakes are found."));
+			Debug.println("Summary: ["+total+"] lakes are found.");
 		}
 		
-		oc.collect(rqid, new Text("Summary: ["+total+"] lakes are found."));
-		Debug.println("Summary: ["+total+"] lakes are found.");
 	}
 }
 
