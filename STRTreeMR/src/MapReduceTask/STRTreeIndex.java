@@ -103,11 +103,15 @@ class STRTreeIndexReducer extends MapReduceBase
 		count++;
 		ArrayList<Rect> rlist = new ArrayList<Rect>();
 		while(value.hasNext()) {
-			Rect r = value.next();
-			//Debug.println(r.toString());
-			rlist.add(r);
+			Rect r = new Rect();
+			r = value.next();
+			Rect rn = new Rect(r.x1,r.x2,r.y1,r.y2);
+			rlist.add(rn);
 		}
+		//Debug.println("before writing tree");
 		STRTreeWritable strtree = new STRTreeWritable(rlist,3);
+		//strtree.DFStraverse();
+		//Debug.println("after writing tree");
 		oc.collect(key, strtree);
 	}
 }

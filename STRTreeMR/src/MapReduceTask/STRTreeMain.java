@@ -12,10 +12,12 @@ public class STRTreeMain {
 		String[] arguments = Arrays.copyOfRange(args, 1, args.length);
 		if(sub_cmd.equals("index")) {
 			STRTreeIndex.run(arguments);
+		}else if(sub_cmd.equals("range_query")) {
+			STRTreeRangeQuery.run(arguments);
 		}
 		else {
 			System.out.println("Umrecognized sub commands.");
 		}
 	}
-
+	
 }

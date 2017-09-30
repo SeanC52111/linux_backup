@@ -26,15 +26,22 @@ public class STRTree {
 	protected ArrayList<STRNode> rootnodes;
 	public STRNode root;
 	public STRTree(ArrayList<Rect> rectlist,int nodec) {
+		if(rectlist == null || nodec == 0)
+			return;
 		//use the nodelist to create a strtree
 		//input: nodec,nodelist
 		//output: root nodes which size is less than nodec
 		nodelist = new ArrayList<STRNode>();
 		rootnodes = new ArrayList<STRNode>();
 		
-		for(Rect r : rectlist) {
-			nodelist.add(new STRNode(r,true,null,""));
+		for(int i=0;i<rectlist.size();i++) {
+			Rect r = rectlist.get(i);
+			//System.out.println(r.toString());
+			STRNode n = new STRNode(r,true,null,"");
+			nodelist.add(n);
+			
 		}
+		
 		rootnodes = createTree(nodec);
 		//combine the root nodes list to one node:root
 		root = mergeRoot(rootnodes);
@@ -49,7 +56,7 @@ public class STRTree {
 		for(STRNode r : rootnodes) {
 			hash += r.MBR.toString()+r.hashvalue;
 		}
-		System.out.println(hash);
+		//System.out.println(hash);
 		Hasher hasher = new Hasher();
 		hash = hasher.stringSHA(hash);
 		root = new STRNode(mbr,false,rootnodes,hash);
@@ -160,18 +167,19 @@ public class STRTree {
 	
 	//input: STRNode, query range, empty VO list
 	//process in recurrent format
-	public void secureRangeQuery(STRNode n,Rect query,LinkedList<String> VO)
+	public void secureRangeQuery(STRNode n,Rect query,ArrayList<Rect> result,LinkedList<String> VO)
 	{
 		VO.add("[");
 		for(int i =0;i<n.child.size();i++) {
 			if(query.isIntersects(n.child.get(i).MBR) && !n.child.get(i).isleaf) {
-				secureRangeQuery(n.child.get(i),query,VO);
+				secureRangeQuery(n.child.get(i),query,result,VO);
 			}
 			else {
 				if(n.child.get(i).isleaf) {
 					VO.add(n.child.get(i).MBR.toString());
 					if(n.child.get(i).MBR.isIntersects(query)) {
-						System.out.println("result: "+n.child.get(i).MBR.toString());
+						//System.out.println("result: "+n.child.get(i).MBR.toString());
+						result.add(n.child.get(i).MBR);
 					}
 				}
 				else
