@@ -21,9 +21,9 @@ public class STRTreeWritable extends STRTree implements Writable{
 	
 	@Override
 	public void readFields(DataInput in) throws IOException{
-		Debug.println("TreeWritable::readFields");
+		//Debug.println("TreeWritable::readFields");
 		int size = in.readInt();
-		Debug.println("data size: "+ size);
+		//Debug.println("data size: "+ size);
 		ArrayList<STRNode> nl=new ArrayList<STRNode>();
 		for(int i=0;i<size;i++) {
 			Rect r = new Rect();
@@ -60,41 +60,41 @@ public class STRTreeWritable extends STRTree implements Writable{
 	}
 	@Override
 	public void write(DataOutput out) throws IOException{
-		Debug.println("TReeWritable");
+		//Debug.println("TReeWritable");
 		int size = nodelist.size();
 		out.writeInt(size);
-		Debug.println(size);
+		//Debug.println(size);
 		Rect r = new Rect();
 		for(int i=0;i<size;i++)
 		{
 			r = nodelist.get(i).MBR;
 			r.write(out);
-			Debug.println(r.x1+" "+r.x2+" "+r.y1+" "+r.y2);
+			//Debug.println(r.x1+" "+r.x2+" "+r.y1+" "+r.y2);
 		}
 		writeSubTree(root,out);
 	}
 	private void writeSubTree(STRNode root,DataOutput out) throws IOException{
 		if(root.child == null) {
 			out.writeBoolean(true);
-			Debug.println("root child is null-leafnode");
+			//Debug.println("root child is null-leafnode");
 			root.MBR.write(out);
-			Debug.println("mbr "+root.MBR.toString());
+			//Debug.println("mbr "+root.MBR.toString());
 			out.writeBoolean(root.isleaf);
-			Debug.println("is leaf "+root.isleaf);
+			//Debug.println("is leaf "+root.isleaf);
 			Text h =new Text(root.hashvalue);
 			h.write(out);
-			Debug.println("hash value "+h.toString());
+			//Debug.println("hash value "+h.toString());
 		}
 		else {
 			out.writeBoolean(false);
-			Debug.println("has root child");
+			//Debug.println("has root child");
 			root.MBR.write(out);
-			Debug.println("mbr "+root.MBR.toString());
+			//Debug.println("mbr "+root.MBR.toString());
 			out.writeBoolean(root.isleaf);
-			Debug.println("is leaf "+root.isleaf);
+			//Debug.println("is leaf "+root.isleaf);
 			Text h =new Text(root.hashvalue);
 			h.write(out);
-			Debug.println("hash value "+h.toString());
+			//Debug.println("hash value "+h.toString());
 			out.writeInt(root.child.size());
 			for(int i=0;i<root.child.size();i++) {
 				writeSubTree(root.child.get(i),out);

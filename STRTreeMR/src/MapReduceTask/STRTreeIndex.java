@@ -46,7 +46,7 @@ public class STRTreeIndex {
 		conf.setMapOutputKeyClass(LongWritable.class);
 		conf.setMapOutputValueClass(Rect.class);
 		
-		conf.setOutputKeyClass(LongWritable.class);
+		conf.setOutputKeyClass(Text.class);
 		conf.setOutputValueClass(STRTreeWritable.class);
 		conf.setOutputFormat(SequenceFileOutputFormat.class);
 		
@@ -108,7 +108,7 @@ class STRTreeIndexMapper extends MapReduceBase
 //output (key,value) = _, STRTree
 
 class STRTreeIndexReducer extends MapReduceBase
-	implements Reducer<LongWritable,Rect,LongWritable,STRTreeWritable>{
+	implements Reducer<LongWritable,Rect,Text,STRTreeWritable>{
 	static int count = 0;
 	static int nodec = 0;
 	
@@ -118,7 +118,7 @@ class STRTreeIndexReducer extends MapReduceBase
 	}
 	
 	@Override
-	public void reduce(LongWritable key,Iterator<Rect> value,OutputCollector<LongWritable,STRTreeWritable> oc,Reporter rpt)throws IOException{
+	public void reduce(LongWritable key,Iterator<Rect> value,OutputCollector<Text,STRTreeWritable> oc,Reporter rpt)throws IOException{
 		count++;
 		ArrayList<Rect> rlist = new ArrayList<Rect>();
 		while(value.hasNext()) {
@@ -131,7 +131,8 @@ class STRTreeIndexReducer extends MapReduceBase
 		STRTreeWritable strtree = new STRTreeWritable(rlist,3);
 		//strtree.DFStraverse();
 		//Debug.println("after writing tree");
-		oc.collect(key, strtree);
+		Text k = new Text(String.valueOf(key));
+		oc.collect(k, strtree);
 	}
 }
 

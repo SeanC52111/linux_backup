@@ -120,7 +120,7 @@ class STRTreeRangeQueryMapper extends MapReduceBase
 		LinkedList<String> VO = new LinkedList<String>();
 		ArrayList<Rect> result = new ArrayList<Rect>();
 		//System.out.println("root mbr:"+strtree.root.MBR.toString());
-		strtree.DFStraverse();
+		//strtree.DFStraverse();
 		strtree.secureRangeQuery(strtree.root, range, result,VO);
 		Debug.println("Find "+result.size()+" lakes.");
 		for(Rect r : result) {
@@ -130,8 +130,9 @@ class STRTreeRangeQueryMapper extends MapReduceBase
 		String vos = "";
 		for(String s : VO) {
 			vos += s + "#";
-			oc.collect(new Text("VO"), new Text(vos));
 		}
+		oc.collect(new Text("VO"), new Text(vos));
+		oc.collect(new Text("root_sig"), new Text(strtree.root.MBR.toString()+strtree.root.hashvalue));
 	}
 }
 
@@ -144,10 +145,21 @@ class STRTreeRangeQueryReducer extends MapReduceBase
 		
 		int total = 0;
 		if(rqid.toString().equals("VO")) {
-			Text vos = new Text(rect_it.next());
-			oc.collect(rqid, vos);
-			Debug.println("VOs: "+vos.toString());
-		}else {
+			while(rect_it.hasNext()) {
+				Text vos = new Text(rect_it.next());
+				oc.collect(rqid, vos);
+				Debug.println("VOs: "+vos.toString());
+			}
+			
+		}else if(rqid.toString().equals("root_sig")) {
+			while(rect_it.hasNext()) {
+				Text rootsig = new Text(rect_it.next());
+				oc.collect(rqid, rootsig);
+				Debug.println("root_sig: "+rootsig.toString());
+			}
+			
+		}
+		else {
 			while(rect_it.hasNext()) {
 				Text r = rect_it.next();
 				oc.collect(rqid, new Text(r.toString()));
