@@ -43,10 +43,10 @@ public class STRTreeIndex {
 		conf.setMapperClass(STRTreeIndexMapper.class);
 		conf.setReducerClass(STRTreeIndexReducer.class);
 		
-		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputKeyClass(LongWritable.class);
 		conf.setMapOutputValueClass(Rect.class);
 		
-		conf.setOutputKeyClass(Text.class);
+		conf.setOutputKeyClass(LongWritable.class);
 		conf.setOutputValueClass(STRTreeWritable.class);
 		conf.setOutputFormat(SequenceFileOutputFormat.class);
 		
@@ -66,20 +66,39 @@ public class STRTreeIndex {
 //input (key,value) = lineno, line
 //output (key value) = count to number of calls of map, Rect
 class STRTreeIndexMapper extends MapReduceBase
-	implements Mapper<LongWritable,Text,Text,Rect>{
+	implements Mapper<LongWritable,Text,LongWritable,Rect>{
 	static int inst_count = 0;
 	static enum IndexCounters {SIZE_E,COUNT_E};
 	
-	synchronized Text getTreeId(Text content,Reporter rpt) {
-		String path = ((FileSplit)rpt.getInputSplit()).getPath().toString();
-		return new Text(path);
+	final static int sizeof_boolean = Integer.SIZE/8;
+	final static int sizeof_int = Integer.SIZE/8;
+	final static int sizeof_double = Double.SIZE/8;
+	final static int sizeof_hash = 64;
+	final static int max_block_size = 127*1024*1024;
+	
+	synchronized LongWritable getTreeId(Text content,Reporter rpt) {
+		//String path = ((FileSplit)rpt.getInputSplit()).getPath().toString();
+		Counters.Counter size_cc = rpt.getCounter(IndexCounters.SIZE_E);
+		Counters.Counter count_cc = rpt.getCounter(IndexCounters.COUNT_E);
+		//size of data plus tree node
+		int dsize = sizeof_double*4 + sizeof_boolean*2+sizeof_int+sizeof_hash;
+		if(dsize + size_cc.getValue()+sizeof_int>max_block_size) {
+			size_cc.setValue(dsize);
+			count_cc.increment(1);
+			return new LongWritable(count_cc.getValue());
+		}
+		else
+		{
+			size_cc.increment(dsize);
+			return new LongWritable(count_cc.getValue());
+		}
 	}
 	
 	@Override
-	public void map(LongWritable no,Text content,OutputCollector<Text,Rect> oc,Reporter rpt) throws IOException{
+	public void map(LongWritable no,Text content,OutputCollector<LongWritable,Rect> oc,Reporter rpt) throws IOException{
 		String line = content.toString();
 		Rect rect = InputParser.getObjFromLine(line);
-		Text tid = getTreeId(content,rpt);
+		LongWritable tid = getTreeId(content,rpt);
 		Debug.println("Tree id= "+tid.toString());
 		oc.collect(tid, rect);
 	}
@@ -89,7 +108,7 @@ class STRTreeIndexMapper extends MapReduceBase
 //output (key,value) = _, STRTree
 
 class STRTreeIndexReducer extends MapReduceBase
-	implements Reducer<Text,Rect,Text,STRTreeWritable>{
+	implements Reducer<LongWritable,Rect,LongWritable,STRTreeWritable>{
 	static int count = 0;
 	static int nodec = 0;
 	
@@ -99,7 +118,7 @@ class STRTreeIndexReducer extends MapReduceBase
 	}
 	
 	@Override
-	public void reduce(Text key,Iterator<Rect> value,OutputCollector<Text,STRTreeWritable> oc,Reporter rpt)throws IOException{
+	public void reduce(LongWritable key,Iterator<Rect> value,OutputCollector<LongWritable,STRTreeWritable> oc,Reporter rpt)throws IOException{
 		count++;
 		ArrayList<Rect> rlist = new ArrayList<Rect>();
 		while(value.hasNext()) {
@@ -115,13 +134,4 @@ class STRTreeIndexReducer extends MapReduceBase
 		oc.collect(key, strtree);
 	}
 }
-
-
-
-
-
-
-
-
-
 
